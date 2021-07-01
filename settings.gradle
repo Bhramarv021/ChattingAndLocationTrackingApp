@@ -1,0 +1,2 @@
+rootProject.name = "ChattingAndLocationTrackingApp"
+include ':app'

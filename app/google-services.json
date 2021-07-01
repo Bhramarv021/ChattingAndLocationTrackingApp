@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "721062416244",
+    "project_id": "chattingandlocationtrackingapp",
+    "storage_bucket": "chattingandlocationtrackingapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:721062416244:android:774c8fd844467bb2b96621",
+        "android_client_info": {
+          "package_name": "com.example.chattingandlocationtrackingapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "721062416244-urlfstkq6kqvi5138d8mqoe47tda4tuo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.chattingandlocationtrackingapp",
+            "certificate_hash": "afbdd3ab1db2322f7d63cfc6112c0bf042782f1b"
+          }
+        },
+        {
+          "client_id": "721062416244-stm178g8loooqgg67mfuk95ogfj4lkvl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5CoiL7g4UXyetMSaP3QKh00hJtUzjDqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "721062416244-stm178g8loooqgg67mfuk95ogfj4lkvl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

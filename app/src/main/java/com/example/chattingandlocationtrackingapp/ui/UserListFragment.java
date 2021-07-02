@@ -1,6 +1,7 @@
 package com.example.chattingandlocationtrackingapp.ui;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.chattingandlocationtrackingapp.R;
 import com.example.chattingandlocationtrackingapp.adapters.UserRecyclerAdapter;
 import com.example.chattingandlocationtrackingapp.models.User;
+import com.example.chattingandlocationtrackingapp.models.UserLocation;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -36,6 +38,7 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
     //vars
     private ArrayList<User> mUserList = new ArrayList<>();
     private UserRecyclerAdapter mUserRecyclerAdapter;
+    private ArrayList<UserLocation> mUserLocation = new ArrayList<>();
 
 
     public static UserListFragment newInstance(){
@@ -47,6 +50,8 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         super.onCreate(savedInstanceState);
         if(getArguments() != null){
             mUserList = getArguments().getParcelableArrayList(getString(R.string.intent_user_list));
+
+            mUserLocation = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
         }
     }
 
@@ -59,6 +64,11 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         initUserListRecyclerView();
 
         initGoogleMap(savedInstanceState);
+
+        for (UserLocation userLocation : mUserLocation){
+            Log.d(TAG, "onCreateView: user location : "+userLocation.getUser().getUsername());
+            Log.d(TAG, "onCreateView: geo point : "+userLocation.getGeoPoint().getLatitude() + " + " + userLocation.getGeoPoint().getLongitude());
+        }
 
         return view;
     }

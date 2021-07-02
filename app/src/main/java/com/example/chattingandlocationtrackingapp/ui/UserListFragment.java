@@ -1,5 +1,8 @@
 package com.example.chattingandlocationtrackingapp.ui;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -8,6 +11,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -16,11 +20,14 @@ import com.example.chattingandlocationtrackingapp.R;
 import com.example.chattingandlocationtrackingapp.adapters.UserRecyclerAdapter;
 import com.example.chattingandlocationtrackingapp.models.User;
 import com.example.chattingandlocationtrackingapp.models.UserLocation;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firestore.v1.MapValue;
 
 import java.util.ArrayList;
@@ -39,6 +46,9 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
     private ArrayList<User> mUserList = new ArrayList<>();
     private UserRecyclerAdapter mUserRecyclerAdapter;
     private ArrayList<UserLocation> mUserLocation = new ArrayList<>();
+    private GoogleMap mGoogleMap;
+    private LatLngBounds mMapBoundary;
+    private UserLocation mUserPosition;
 
 
     public static UserListFragment newInstance(){
@@ -65,12 +75,37 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
 
         initGoogleMap(savedInstanceState);
 
-        for (UserLocation userLocation : mUserLocation){
-            Log.d(TAG, "onCreateView: user location : "+userLocation.getUser().getUsername());
-            Log.d(TAG, "onCreateView: geo point : "+userLocation.getGeoPoint().getLatitude() + " + " + userLocation.getGeoPoint().getLongitude());
-        }
+//        for (UserLocation userLocation : mUserLocation){
+//            Log.d(TAG, "onCreateView: user location : "+userLocation.getUser().getUsername());
+//            Log.d(TAG, "onCreateView: geo point : "+userLocation.getGeoPoint().getLatitude() + " + " + userLocation.getGeoPoint().getLongitude());
+//        }
+
+        setUserPosition();
 
         return view;
+    }
+
+    private void setCameraView(){
+
+        double bottomBoundary = mUserPosition.getGeoPoint().getLatitude() - .1;
+        double leftBoundary = mUserPosition.getGeoPoint().getLongitude() - .1;
+        double topBoundary = mUserPosition.getGeoPoint().getLatitude() + .1;
+        double rightBoundary = mUserPosition.getGeoPoint().getLongitude() + .1;
+
+        mMapBoundary = new LatLngBounds(
+                new LatLng(bottomBoundary, leftBoundary),
+                new LatLng(topBoundary, rightBoundary)
+        );
+
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary, 0));
+    }
+
+    private void setUserPosition(){
+        for(UserLocation userLocation : mUserLocation){
+            if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
+                mUserPosition = userLocation;
+            }
+        }
     }
 
     private void initGoogleMap(Bundle savedInstanceState){
@@ -108,15 +143,18 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         mMapView.onStop();
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(GoogleMap map) {
-//        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
-//                != PackageManager.PERMISSION_GRANTED
-//                && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)
-//                != PackageManager.PERMISSION_GRANTED) {
-//            return;
-//        }
-//        map.setMyLocationEnabled(true);
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        map.setMyLocationEnabled(true);
+        mGoogleMap = map;
+        setCameraView();
 //        mGoogleMap = map;
 //        setCameraView();
 

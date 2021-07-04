@@ -14,7 +14,7 @@ public class UserLocation implements Parcelable {
     private @ServerTimestamp Date timeStamp;
     private User user;
 
-    public UserLocation(GeoPoint geoPoint, Date timeStamp, User user) {
+    public UserLocation(User user, GeoPoint geoPoint, Date timeStamp) {
         this.geoPoint = geoPoint;
         this.timeStamp = timeStamp;
         this.user = user;

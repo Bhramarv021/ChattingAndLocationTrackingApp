@@ -2,6 +2,7 @@ package com.example.chattingandlocationtrackingapp.ui;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
@@ -32,6 +33,7 @@ import com.example.chattingandlocationtrackingapp.adapters.ChatroomRecyclerAdapt
 import com.example.chattingandlocationtrackingapp.models.Chatroom;
 import com.example.chattingandlocationtrackingapp.models.User;
 import com.example.chattingandlocationtrackingapp.models.UserLocation;
+import com.example.chattingandlocationtrackingapp.services.LocationService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -103,6 +105,32 @@ public class MainActivity extends AppCompatActivity implements
         initChatroomRecyclerView();
     }
 
+    private void startLocationService(){
+        if(!isLocationServiceRunning()){
+            Intent serviceIntent = new Intent(this, LocationService.class);
+//        this.startService(serviceIntent);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+
+                MainActivity.this.startForegroundService(serviceIntent);
+            }else{
+                startService(serviceIntent);
+            }
+        }
+    }
+
+    private boolean isLocationServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+            if("com.example.chattingandlocationtrackingapp.services.LocationService".equals(service.service.getClassName())) {
+                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
+                return true;
+            }
+        }
+        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
+        return false;
+    }
+
     private void getUserDetails() {
         if (mUserLocation == null) {
             mUserLocation = new UserLocation();
@@ -170,6 +198,7 @@ public class MainActivity extends AppCompatActivity implements
                     mUserLocation.setGeoPoint(geoPoint);
                     mUserLocation.setTimeStamp(null);
                     saveUserLocation();
+                    startLocationService();
                 }
             }
         });

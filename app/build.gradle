@@ -46,7 +46,7 @@ dependencies {
     implementation 'com.android.support:multidex:1.0.3'
     // Firebase Core
     implementation 'com.google.firebase:firebase-core:19.0.0'
-    //Firebase Authentication
+    // Firebase Authentication
     implementation 'com.google.firebase:firebase-auth:21.0.1'
     // Firestore Firestore
     implementation 'com.google.firebase:firebase-firestore:23.0.1'
@@ -63,6 +63,9 @@ dependencies {
 
     // Google services
     implementation 'com.google.android.gms:play-services-maps:17.0.1'
+
+    // Google map utils for clustering
+    implementation 'com.google.maps.android:android-maps-utils:2.2.3'
 }
 
 apply plugin: 'com.google.gms.google-services'

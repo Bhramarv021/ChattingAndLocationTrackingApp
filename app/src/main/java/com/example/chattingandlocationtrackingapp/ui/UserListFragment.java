@@ -18,8 +18,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.chattingandlocationtrackingapp.R;
 import com.example.chattingandlocationtrackingapp.adapters.UserRecyclerAdapter;
+import com.example.chattingandlocationtrackingapp.models.ClusterMarker;
 import com.example.chattingandlocationtrackingapp.models.User;
 import com.example.chattingandlocationtrackingapp.models.UserLocation;
+import com.example.chattingandlocationtrackingapp.util.MyClusterManagerRenderer;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -29,6 +31,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firestore.v1.MapValue;
+import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
 
@@ -49,26 +52,38 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap mGoogleMap;
     private LatLngBounds mMapBoundary;
     private UserLocation mUserPosition;
+    private ClusterManager<ClusterMarker> mClusterManager;
+    private MyClusterManagerRenderer mClusterManagerRenderer;
+    private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
 
 
-    public static UserListFragment newInstance(){
+    public static UserListFragment newInstance() {
         return new UserListFragment();
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(getArguments() != null){
-            mUserList = getArguments().getParcelableArrayList(getString(R.string.intent_user_list));
+//        if(getArguments() != null){
+//            mUserList = getArguments().getParcelableArrayList(getString(R.string.intent_user_list));
+//
+//            mUserLocation = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
+//        }
+        if (mUserLocation.size() == 0) { // make sure the list doesn't duplicate by navigating back
+            if (getArguments() != null) {
+                final ArrayList<User> users = getArguments().getParcelableArrayList(getString(R.string.intent_user_list));
+                mUserList.addAll(users);
 
-            mUserLocation = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
+                final ArrayList<UserLocation> locations = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
+                mUserLocation.addAll(locations);
+            }
         }
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view  = inflater.inflate(R.layout.fragment_user_list, container, false);
+        View view = inflater.inflate(R.layout.fragment_user_list, container, false);
         mUserListRecyclerView = view.findViewById(R.id.user_list_recycler_view);
         mMapView = view.findViewById(R.id.user_list_map);
         initUserListRecyclerView();
@@ -85,7 +100,61 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         return view;
     }
 
-    private void setCameraView(){
+    private void addMapMarkers() {
+
+        if (mGoogleMap != null) {
+
+            if (mClusterManager == null) {
+                mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
+            }
+            if (mClusterManagerRenderer == null) {
+                mClusterManagerRenderer = new MyClusterManagerRenderer(
+                        getActivity(),
+                        mGoogleMap,
+                        mClusterManager
+                );
+                mClusterManager.setRenderer(mClusterManagerRenderer);
+            }
+
+            for (UserLocation userLocation : mUserLocation) {
+
+                Log.d(TAG, "addMapMarkers: location: " + userLocation.getGeoPoint().toString());
+                try {
+                    String snippet = "";
+                    if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
+                        snippet = "This is you";
+                    } else {
+                        snippet = "Determine route to " + userLocation.getUser().getUsername() + "?";
+                    }
+
+                    int avatar = R.drawable.cartman_cop; // set the default avatar
+                    try {
+                        avatar = Integer.parseInt(userLocation.getUser().getAvatar());
+                    } catch (NumberFormatException e) {
+                        Log.d(TAG, "addMapMarkers: no avatar for " + userLocation.getUser().getUsername() + ", setting default.");
+                    }
+                    ClusterMarker newClusterMarker = new ClusterMarker(
+                            new LatLng(userLocation.getGeoPoint().getLatitude(), userLocation.getGeoPoint().getLongitude()),
+                            userLocation.getUser().getUsername(),
+                            snippet,
+                            avatar,
+                            userLocation.getUser()
+                    );
+                    mClusterManager.addItem(newClusterMarker);
+                    mClusterMarkers.add(newClusterMarker);
+
+                } catch (NullPointerException e) {
+                    Log.e(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
+                }
+
+            }
+            mClusterManager.cluster();
+
+            setCameraView();
+        }
+    }
+
+    private void setCameraView() {
 
         double bottomBoundary = mUserPosition.getGeoPoint().getLatitude() - .1;
         double leftBoundary = mUserPosition.getGeoPoint().getLongitude() - .1;
@@ -100,17 +169,17 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary, 0));
     }
 
-    private void setUserPosition(){
-        for(UserLocation userLocation : mUserLocation){
-            if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
+    private void setUserPosition() {
+        for (UserLocation userLocation : mUserLocation) {
+            if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
                 mUserPosition = userLocation;
             }
         }
     }
 
-    private void initGoogleMap(Bundle savedInstanceState){
+    private void initGoogleMap(Bundle savedInstanceState) {
         Bundle mapViewBundle = null;
-        if(savedInstanceState != null){
+        if (savedInstanceState != null) {
             mapViewBundle = savedInstanceState.getBundle(MAPVIEW_BUNDLE_KEY);
         }
 
@@ -118,7 +187,7 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         mMapView.getMapAsync(this);
     }
 
-    private void initUserListRecyclerView(){
+    private void initUserListRecyclerView() {
         mUserRecyclerAdapter = new UserRecyclerAdapter(mUserList);
         mUserListRecyclerView.setAdapter(mUserRecyclerAdapter);
         mUserListRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -152,13 +221,14 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
                 != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        map.setMyLocationEnabled(true);
+//        map.setMyLocationEnabled(true);
         mGoogleMap = map;
-        setCameraView();
+        addMapMarkers();
+//        setCameraView();
 //        mGoogleMap = map;
 //        setCameraView();
 
-        map.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+//        map.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
 
 //        mGoogleMap = map;
 //        addMapMarkers();
